@@ -176,6 +176,8 @@ public class Glide implements ComponentCallbacks2 {
   private static void checkAndInitializeGlide(@NonNull Context context) {
     // In the thread running initGlide(), one or more classes may call Glide.get(context).
     // Without this check, those calls could trigger infinite recursion.
+
+    // 同一个线程中进行多次调用会初始化多次，因为synchronized是可冲入锁
     if (isInitializing) {
       throw new IllegalStateException("You cannot call Glide.get() in registerComponents(),"
           + " use the provided Glide instance instead");
@@ -186,8 +188,8 @@ public class Glide implements ComponentCallbacks2 {
   }
 
   /**
-   * @deprecated Use {@link #init(Context, GlideBuilder)} to get a singleton compatible with
-   * Glide's generated API.
+   * @deprecated Use {@link #init(Context, GlideBuilder)} to get a singleton compatible with Glide's
+   * generated API.
    *
    * <p>This method will be removed in a future version of Glide.
    */
@@ -219,6 +221,9 @@ public class Glide implements ComponentCallbacks2 {
     glide = null;
   }
 
+  /**
+   * Glide单例的初始化
+   */
   private static void initializeGlide(@NonNull Context context) {
     initializeGlide(context, new GlideBuilder());
   }
@@ -227,6 +232,8 @@ public class Glide implements ComponentCallbacks2 {
   private static void initializeGlide(@NonNull Context context, @NonNull GlideBuilder builder) {
     Context applicationContext = context.getApplicationContext();
     GeneratedAppGlideModule annotationGeneratedModule = getAnnotationGeneratedGlideModules();
+
+    //解析 Manifest 的 meta-data 中声明的 GlideModule
     List<com.bumptech.glide.module.GlideModule> manifestModules = Collections.emptyList();
     if (annotationGeneratedModule == null || annotationGeneratedModule.isManifestParsingEnabled()) {
       manifestModules = new ManifestParser(applicationContext).parse();
@@ -234,8 +241,7 @@ public class Glide implements ComponentCallbacks2 {
 
     if (annotationGeneratedModule != null
         && !annotationGeneratedModule.getExcludedModuleClasses().isEmpty()) {
-      Set<Class<?>> excludedModuleClasses =
-          annotationGeneratedModule.getExcludedModuleClasses();
+      Set<Class<?>> excludedModuleClasses = annotationGeneratedModule.getExcludedModuleClasses();
       Iterator<com.bumptech.glide.module.GlideModule> iterator = manifestModules.iterator();
       while (iterator.hasNext()) {
         com.bumptech.glide.module.GlideModule current = iterator.next();
@@ -255,9 +261,9 @@ public class Glide implements ComponentCallbacks2 {
       }
     }
 
-    RequestManagerRetriever.RequestManagerFactory factory =
-        annotationGeneratedModule != null
-            ? annotationGeneratedModule.getRequestManagerFactory() : null;
+    RequestManagerRetriever.RequestManagerFactory factory = annotationGeneratedModule != null
+        ? annotationGeneratedModule.getRequestManagerFactory() : null;
+
     builder.setRequestManagerFactory(factory);
     for (com.bumptech.glide.module.GlideModule module : manifestModules) {
       module.applyOptions(applicationContext, builder);
@@ -265,6 +271,9 @@ public class Glide implements ComponentCallbacks2 {
     if (annotationGeneratedModule != null) {
       annotationGeneratedModule.applyOptions(applicationContext, builder);
     }
+
+
+    //构建出Glide对象
     Glide glide = builder.build(applicationContext);
     for (com.bumptech.glide.module.GlideModule module : manifestModules) {
       module.registerComponents(applicationContext, glide, glide.registry);
@@ -281,9 +290,7 @@ public class Glide implements ComponentCallbacks2 {
   private static GeneratedAppGlideModule getAnnotationGeneratedGlideModules() {
     GeneratedAppGlideModule result = null;
     try {
-      Class<GeneratedAppGlideModule> clazz =
-          (Class<GeneratedAppGlideModule>)
-              Class.forName("com.bumptech.glide.GeneratedAppGlideModuleImpl");
+      Class<GeneratedAppGlideModule> clazz = (Class<GeneratedAppGlideModule>) Class.forName("com.bumptech.glide.GeneratedAppGlideModuleImpl");
       result = clazz.getDeclaredConstructor().newInstance();
     } catch (ClassNotFoundException e) {
       if (Log.isLoggable(TAG, Log.WARN)) {
@@ -292,7 +299,7 @@ public class Glide implements ComponentCallbacks2 {
             + " in your application and a @GlideModule annotated AppGlideModule implementation or"
             + " LibraryGlideModules will be silently ignored");
       }
-    // These exceptions can't be squashed across all versions of Android.
+      // These exceptions can't be squashed across all versions of Android.
     } catch (InstantiationException e) {
       throwIncorrectGlideModule(e);
     } catch (IllegalAccessException e) {
@@ -484,7 +491,7 @@ public class Glide implements ComponentCallbacks2 {
         .append(
             Uri.class,
             ParcelFileDescriptor.class,
-             new UriLoader.FileDescriptorFactory(contentResolver))
+            new UriLoader.FileDescriptorFactory(contentResolver))
         .append(
             Uri.class,
             AssetFileDescriptor.class,
@@ -592,9 +599,9 @@ public class Glide implements ComponentCallbacks2 {
    * exists so that pre-filling only happens when the Activity is first created, rather than on
    * every rotation. </p>
    *
-   * @param bitmapAttributeBuilders The list of
-   * {@link com.bumptech.glide.load.engine.prefill.PreFillType.Builder Builders} representing
-   * individual sizes and configurations of {@link android.graphics.Bitmap}s to be pre-filled.
+   * @param bitmapAttributeBuilders The list of {@link com.bumptech.glide.load.engine.prefill.PreFillType.Builder
+   *                                Builders} representing individual sizes and configurations of
+   *                                {@link android.graphics.Bitmap}s to be pre-filled.
    */
   @SuppressWarnings("unused") // Public API
   public void preFillBitmapPool(@NonNull PreFillType.Builder... bitmapAttributeBuilders) {
@@ -634,7 +641,7 @@ public class Glide implements ComponentCallbacks2 {
    * Clears disk cache.
    *
    * <p>
-   *     This method should always be called on a background thread, since it is a blocking call.
+   * This method should always be called on a background thread, since it is a blocking call.
    * </p>
    */
   // Public API.
@@ -760,9 +767,8 @@ public class Glide implements ComponentCallbacks2 {
    *
    * @param fragment The fragment to use.
    * @return A RequestManager for the given Fragment that can be used to start a load.
-   * @deprecated Prefer support Fragments and {@link #with(Fragment)} instead,
-   * {@link android.app.Fragment} will be deprecated. See
-   * https://github.com/android/android-ktx/pull/161#issuecomment-363270555.
+   * @deprecated Prefer support Fragments and {@link #with(Fragment)} instead, {@link
+   * android.app.Fragment} will be deprecated. See https://github.com/android/android-ktx/pull/161#issuecomment-363270555.
    */
   @SuppressWarnings("deprecation")
   @Deprecated

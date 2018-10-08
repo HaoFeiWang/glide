@@ -31,8 +31,7 @@ public final class ManifestParser {
     }
     List<GlideModule> modules = new ArrayList<>();
     try {
-      ApplicationInfo appInfo = context.getPackageManager()
-          .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+      ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
       if (appInfo.metaData == null) {
         if (Log.isLoggable(TAG, Log.DEBUG)) {
           Log.d(TAG, "Got null app info metadata");
@@ -60,6 +59,12 @@ public final class ManifestParser {
     return modules;
   }
 
+  /**
+   * 创建GlideModule时需要再Manifest中进行声明如下，Glide在初始化时进行解析，然后反射出实例
+   *
+   * < meta-data android:name="com.example.xh.glidedemo.ConfigurationGlide"
+   *             android:value="GlideModule"/>
+   */
   @SuppressWarnings("deprecation")
   private static GlideModule parseModule(String className) {
     Class<?> clazz;
