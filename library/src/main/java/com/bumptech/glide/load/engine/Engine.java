@@ -28,9 +28,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Responsible for starting loads and managing active and cached resources.
  */
-public class Engine implements EngineJobListener,
-    MemoryCache.ResourceRemovedListener,
-    EngineResource.ResourceListener {
+public class Engine implements EngineJobListener, MemoryCache.ResourceRemovedListener, EngineResource.ResourceListener {
+
   private static final String TAG = "Engine";
   private static final int JOB_POOL_SIZE = 150;
   private static final boolean VERBOSE_IS_LOGGABLE = Log.isLoggable(TAG, Log.VERBOSE);

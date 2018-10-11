@@ -96,6 +96,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * 在gradle中引入Glide之后会自动导入四个包：
+ * com.github.bumptech.glide:annotation
+ * com.github.bumptech.glide:gifdecode
+ * com.github.bumptech.glide:disklrucache
+ * com.github.bumptech.glide:glide
+ *
  * A singleton to present a simple static interface for building requests with
  * {@link RequestBuilder} and maintaining an {@link Engine}, {@link BitmapPool},
  * {@link com.bumptech.glide.load.engine.cache.DiskCache} and {@link MemoryCache}.
@@ -103,11 +109,15 @@ import java.util.Set;
 public class Glide implements ComponentCallbacks2 {
   private static final String DEFAULT_DISK_CACHE_DIR = "image_manager_disk_cache";
   private static final String TAG = "Glide";
+
+  //单例对象
   private static volatile Glide glide;
   private static volatile boolean isInitializing;
 
   private final Engine engine;
   private final BitmapPool bitmapPool;
+
+  //默认为 LruResourceCache
   private final MemoryCache memoryCache;
   private final BitmapPreFiller bitmapPreFiller;
   private final GlideContext glideContext;
@@ -155,11 +165,6 @@ public class Glide implements ComponentCallbacks2 {
     return null;
   }
 
-  /**
-   * Get the singleton.
-   *
-   * @return the singleton
-   */
   @NonNull
   public static Glide get(@NonNull Context context) {
     if (glide == null) {
@@ -177,7 +182,7 @@ public class Glide implements ComponentCallbacks2 {
     // In the thread running initGlide(), one or more classes may call Glide.get(context).
     // Without this check, those calls could trigger infinite recursion.
 
-    // 同一个线程中进行多次调用会初始化多次，因为synchronized是可冲入锁
+    // 同一个线程中进行多次调用会初始化多次，因为synchronized是可重入锁
     if (isInitializing) {
       throw new IllegalStateException("You cannot call Glide.get() in registerComponents(),"
           + " use the provided Glide instance instead");
@@ -213,9 +218,7 @@ public class Glide implements ComponentCallbacks2 {
   @VisibleForTesting
   public static synchronized void tearDown() {
     if (glide != null) {
-      glide.getContext()
-          .getApplicationContext()
-          .unregisterComponentCallbacks(glide);
+      glide.getContext().getApplicationContext().unregisterComponentCallbacks(glide);
       glide.engine.shutdown();
     }
     glide = null;
@@ -231,16 +234,23 @@ public class Glide implements ComponentCallbacks2 {
   @SuppressWarnings("deprecation")
   private static void initializeGlide(@NonNull Context context, @NonNull GlideBuilder builder) {
     Context applicationContext = context.getApplicationContext();
-    GeneratedAppGlideModule annotationGeneratedModule = getAnnotationGeneratedGlideModules();
 
-    //解析 Manifest 的 meta-data 中声明的 GlideModule
+    //在 build.gradle 的 dependencies 中加入annotationProcessor "com.github.bumptech.glide:compiler:4.3.1"
+    //如果使用 @GlideModule 进行注解则会自动生成 GeneratedAppGlideModuleImpl等六个类，所以需要通过反射获取
+    //@GlideModule 只能存在一个，否则编译不过，所以该方法是获取@GlideModule的注解生成类（AAPT的使用）
+    GeneratedAppGlideModule annotationGeneratedModule = getAnnotationGeneratedGlideModules();
     List<com.bumptech.glide.module.GlideModule> manifestModules = Collections.emptyList();
+
+    //默认情况下annotationGeneratedModule.isManifestParsingEnabled()会返回一个 true
+    //在AppGlideModule中重写isManifestParsingEnabled方法,返回false可以避免再次解析Manifest
+    //当然如果你使用的V3版本，则没必要重写这个方法。为了兼容V3，V4在这里还是做了判断
     if (annotationGeneratedModule == null || annotationGeneratedModule.isManifestParsingEnabled()) {
+      //解析 Manifest 的 meta-data 中声明的 GlideModule（V3的做法）
       manifestModules = new ManifestParser(applicationContext).parse();
     }
 
-    if (annotationGeneratedModule != null
-        && !annotationGeneratedModule.getExcludedModuleClasses().isEmpty()) {
+    //默认情况下annotationGeneratedModule.getExcludedModuleClasses()会返回一个 EmptySet
+    if (annotationGeneratedModule != null && !annotationGeneratedModule.getExcludedModuleClasses().isEmpty()) {
       Set<Class<?>> excludedModuleClasses = annotationGeneratedModule.getExcludedModuleClasses();
       Iterator<com.bumptech.glide.module.GlideModule> iterator = manifestModules.iterator();
       while (iterator.hasNext()) {
@@ -254,6 +264,7 @@ public class Glide implements ComponentCallbacks2 {
         iterator.remove();
       }
     }
+
 
     if (Log.isLoggable(TAG, Log.DEBUG)) {
       for (com.bumptech.glide.module.GlideModule glideModule : manifestModules) {
@@ -272,7 +283,6 @@ public class Glide implements ComponentCallbacks2 {
       annotationGeneratedModule.applyOptions(applicationContext, builder);
     }
 
-
     //构建出Glide对象
     Glide glide = builder.build(applicationContext);
     for (com.bumptech.glide.module.GlideModule module : manifestModules) {
@@ -281,6 +291,7 @@ public class Glide implements ComponentCallbacks2 {
     if (annotationGeneratedModule != null) {
       annotationGeneratedModule.registerComponents(applicationContext, glide, glide.registry);
     }
+
     applicationContext.registerComponentCallbacks(glide);
     Glide.glide = glide;
   }
@@ -330,6 +341,7 @@ public class Glide implements ComponentCallbacks2 {
       @NonNull RequestOptions defaultRequestOptions,
       @NonNull Map<Class<?>, TransitionOptions<?, ?>> defaultTransitionOptions,
       @NonNull List<RequestListener<Object>> defaultRequestListeners) {
+
     this.engine = engine;
     this.bitmapPool = bitmapPool;
     this.arrayPool = arrayPool;

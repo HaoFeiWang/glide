@@ -460,8 +460,7 @@ public final class GlideBuilder {
     }
 
     if (engine == null) {
-      engine =
-          new Engine(
+      engine = new Engine(
               memoryCache,
               diskCacheFactory,
               diskCacheExecutor,
