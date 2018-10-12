@@ -117,6 +117,7 @@ final class ProcessorUtil {
     writeClass(COMPILER_PACKAGE_NAME, indexer);
   }
 
+  //输出指定的类文件
   void writeClass(String packageName, TypeSpec clazz) {
     try {
       debugLog("Writing class:\n" + clazz);

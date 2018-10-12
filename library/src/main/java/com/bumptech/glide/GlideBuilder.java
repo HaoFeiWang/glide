@@ -204,7 +204,7 @@ public final class GlideBuilder {
    * Sets the default {@link RequestOptions} to use for all loads across the app.
    *
    * <p>Applying additional options with {@link
-   * RequestBuilder#apply(RequestOptions)} will override defaults
+   * RequestBuilder apply(RequestOptions)} will override defaults
    * set here.
    *
    * @param requestOptions The options to use by default.
@@ -418,26 +418,33 @@ public final class GlideBuilder {
 
   @NonNull
   Glide build(@NonNull Context context) {
+
+    //建立资源加载线程池，用于加载URL或本地资源，即加载源数据
     if (sourceExecutor == null) {
       sourceExecutor = GlideExecutor.newSourceExecutor();
     }
 
+    //建立本地缓存资源加载线程池，用于加载缓存在磁盘中的数据
     if (diskCacheExecutor == null) {
       diskCacheExecutor = GlideExecutor.newDiskCacheExecutor();
     }
 
+    //动画加载线程池
     if (animationExecutor == null) {
       animationExecutor = GlideExecutor.newAnimationExecutor();
     }
 
+    //内存计算器
     if (memorySizeCalculator == null) {
       memorySizeCalculator = new MemorySizeCalculator.Builder(context).build();
     }
 
+    //网络链接状态检测器工厂，用于监听网络状态
     if (connectivityMonitorFactory == null) {
       connectivityMonitorFactory = new DefaultConnectivityMonitorFactory();
     }
 
+    //bitmap资源缓存池
     if (bitmapPool == null) {
       int size = memorySizeCalculator.getBitmapPoolSize();
       if (size > 0) {
@@ -447,18 +454,22 @@ public final class GlideBuilder {
       }
     }
 
+    //数组资源缓存池
     if (arrayPool == null) {
       arrayPool = new LruArrayPool(memorySizeCalculator.getArrayPoolSizeInBytes());
     }
 
+    //内存缓存，用于缓存完成加载和显示的图片数据资源
     if (memoryCache == null) {
       memoryCache = new LruResourceCache(memorySizeCalculator.getMemoryCacheSize());
     }
 
+    //本地磁盘缓存器
     if (diskCacheFactory == null) {
       diskCacheFactory = new InternalCacheDiskCacheFactory(context);
     }
 
+    //建立图片加载引擎，用于执行图片加载请求驱动
     if (engine == null) {
       engine = new Engine(
               memoryCache,
@@ -476,6 +487,7 @@ public final class GlideBuilder {
       defaultRequestListeners = Collections.unmodifiableList(defaultRequestListeners);
     }
 
+    //建立请求索引器
     RequestManagerRetriever requestManagerRetriever =
         new RequestManagerRetriever(requestManagerFactory);
 

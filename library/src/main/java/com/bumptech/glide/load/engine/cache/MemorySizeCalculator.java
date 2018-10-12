@@ -14,6 +14,8 @@ import com.bumptech.glide.util.Synthetic;
 /**
  * A calculator that tries to intelligently determine cache sizes for a given device based on some
  * constants and the devices screen density, width, and height.
+ *
+ * 内存计算器
  */
 public final class MemorySizeCalculator {
   private static final String TAG = "MemorySizeCalculator";
@@ -24,6 +26,8 @@ public final class MemorySizeCalculator {
   private final int bitmapPoolSize;
   private final int memoryCacheSize;
   private final Context context;
+
+  //普通设备上是4M，低内存设备是其1/2
   private final int arrayPoolSize;
 
   interface ScreenDimensions {
@@ -35,12 +39,11 @@ public final class MemorySizeCalculator {
   MemorySizeCalculator(MemorySizeCalculator.Builder builder) {
     this.context = builder.context;
 
-    arrayPoolSize =
-        isLowMemoryDevice(builder.activityManager)
+    arrayPoolSize = isLowMemoryDevice(builder.activityManager)
             ? builder.arrayPoolSizeBytes / LOW_MEMORY_BYTE_ARRAY_POOL_DIVISOR
             : builder.arrayPoolSizeBytes;
-    int maxSize =
-        getMaxSize(
+
+    int maxSize = getMaxSize(
             builder.activityManager, builder.maxSizeMultiplier, builder.lowMemoryMaxSizeMultiplier);
 
     int widthPixels = builder.screenDimensions.getWidthPixels();
@@ -48,7 +51,6 @@ public final class MemorySizeCalculator {
     int screenSize = widthPixels * heightPixels * BYTES_PER_ARGB_8888_PIXEL;
 
     int targetBitmapPoolSize = Math.round(screenSize * builder.bitmapPoolScreens);
-
     int targetMemoryCacheSize = Math.round(screenSize * builder.memoryCacheScreens);
     int availableSize = maxSize - arrayPoolSize;
 
@@ -147,7 +149,6 @@ public final class MemorySizeCalculator {
 
     static final float MAX_SIZE_MULTIPLIER = 0.4f;
     static final float LOW_MEMORY_MAX_SIZE_MULTIPLIER = 0.33f;
-    // 4MB.
     static final int ARRAY_POOL_SIZE_BYTES = 4 * 1024 * 1024;
 
     @Synthetic final Context context;
@@ -164,10 +165,8 @@ public final class MemorySizeCalculator {
 
     public Builder(Context context) {
       this.context = context;
-      activityManager =
-          (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-      screenDimensions =
-          new DisplayMetricsScreenDimensions(context.getResources().getDisplayMetrics());
+      activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+      screenDimensions = new DisplayMetricsScreenDimensions(context.getResources().getDisplayMetrics());
 
       // On Android O+ Bitmaps are allocated natively, ART is much more efficient at managing
       // garbage and we rely heavily on HARDWARE Bitmaps, making Bitmap re-use much less important.

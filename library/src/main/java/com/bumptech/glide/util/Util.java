@@ -156,6 +156,7 @@ public final class Util {
    * Returns {@code true} if called on the main thread, {@code false} otherwise.
    */
   public static boolean isOnMainThread() {
+    //如果没有 prepareLooper 则 Looper.myLooper == null
     return Looper.myLooper() == Looper.getMainLooper();
   }
 

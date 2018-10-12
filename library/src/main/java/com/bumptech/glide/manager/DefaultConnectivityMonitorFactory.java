@@ -11,6 +11,8 @@ import android.util.Log;
  * if the application has the {@code android.permission.ACCESS_NETWORK_STATE} permission and a no-op
  * non functional {@link com.bumptech.glide.manager.ConnectivityMonitor} if the app does not have
  * the required permission.
+ *
+ * 网络链接状态检测器工厂
  */
 public class DefaultConnectivityMonitorFactory implements ConnectivityMonitorFactory {
   private static final String TAG = "ConnectivityMonitor";

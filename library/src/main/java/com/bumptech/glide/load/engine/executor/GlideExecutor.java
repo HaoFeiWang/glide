@@ -73,6 +73,9 @@ public final class GlideExecutor implements ExecutorService {
    * uncaught throwable strategy.
    *
    * <p>Disk cache executors do not allow network operations on their threads.
+   *
+   * 本地缓存资源加载线程池，用于加载缓存在磁盘中的数据
+   * 线程最大数和核心数都为1个，线程名称为"glide-" + name + "-thread-" + threadNum
    */
   public static GlideExecutor newDiskCacheExecutor() {
     return newDiskCacheExecutor(
@@ -137,6 +140,9 @@ public final class GlideExecutor implements ExecutorService {
    * uncaught throwable strategy.
    *
    * <p>Source executors allow network operations on their threads.
+   *
+   * 资源加载线程池，用于加载URL或本地资源，即加载源数据
+   * 最大线程数和核心数都为CPU核心数并且最大不超过4个，线程名称为："glide-" + name + "-thread-" + threadNum）
    */
   public static GlideExecutor newSourceExecutor() {
     return newSourceExecutor(
@@ -169,6 +175,8 @@ public final class GlideExecutor implements ExecutorService {
   }
 
   /**
+   * 获取一个固定大小（CPU 核心数，最多不超过4个）的线程池，并且含有线程名称的前缀
+   *
    * Returns a new fixed thread pool with the given thread count, thread name prefix,
    * and {@link com.bumptech.glide.load.engine.executor.GlideExecutor.UncaughtThrowableStrategy}.
    *
@@ -180,17 +188,17 @@ public final class GlideExecutor implements ExecutorService {
    * com.bumptech.glide.load.engine.executor.GlideExecutor.UncaughtThrowableStrategy} to use to
    *                                  handle uncaught exceptions.
    */
-  // Public API.
   @SuppressWarnings("WeakerAccess")
   public static GlideExecutor newSourceExecutor(
       int threadCount, String name, UncaughtThrowableStrategy uncaughtThrowableStrategy) {
+
     return new GlideExecutor(
         new ThreadPoolExecutor(
             threadCount /* corePoolSize */,
             threadCount /* maximumPoolSize */,
             0 /* keepAliveTime */,
             TimeUnit.MILLISECONDS,
-            new PriorityBlockingQueue<Runnable>(),
+            new PriorityBlockingQueue<Runnable>(), //不会阻塞生产，只会阻塞消费
             new DefaultThreadFactory(name, uncaughtThrowableStrategy, false)));
   }
 
@@ -224,6 +232,9 @@ public final class GlideExecutor implements ExecutorService {
   /**
    * Returns a new cached thread pool that defaults to either one or two threads depending on the
    * number of available cores to use when loading frames of animations.
+   *
+   * 动画加载线程池
+   * 核心线程数为0，最大线程数为1或2个（根据CPU核心数是否大于4而定），保持10s
    */
   public static GlideExecutor newAnimationExecutor() {
     int bestThreadCount = calculateBestThreadCount();
@@ -241,7 +252,6 @@ public final class GlideExecutor implements ExecutorService {
    * Returns a new cached thread pool with the given thread count and
    * {@link UncaughtThrowableStrategy} to use when loading frames of animations.
    */
-  // Public API.
   @SuppressWarnings("WeakerAccess")
   public static GlideExecutor newAnimationExecutor(
       int threadCount, UncaughtThrowableStrategy uncaughtThrowableStrategy) {
@@ -350,13 +360,13 @@ public final class GlideExecutor implements ExecutorService {
 
   /**
    * Determines the number of cores available on the device.
+   *
+   * 获取最优的线程数：CPU核心数，并且最多不能超过4个
    */
-  // Public API.
   @SuppressWarnings("WeakerAccess")
   public static int calculateBestThreadCount() {
     if (bestThreadCount == 0) {
-      bestThreadCount =
-          Math.min(MAXIMUM_AUTOMATIC_THREAD_COUNT, RuntimeCompat.availableProcessors());
+      bestThreadCount = Math.min(MAXIMUM_AUTOMATIC_THREAD_COUNT, RuntimeCompat.availableProcessors());
     }
     return bestThreadCount;
   }
@@ -442,7 +452,9 @@ public final class GlideExecutor implements ExecutorService {
                     .penaltyDeath()
                     .build());
           }
+
           try {
+            //相当于调用 runnable.run
             super.run();
           } catch (Throwable t) {
             uncaughtThrowableStrategy.handle(t);

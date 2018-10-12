@@ -131,8 +131,7 @@ public class RequestManagerRetriever implements Handler.Callback {
     } else {
       assertNotDestroyed(activity);
       FragmentManager fm = activity.getSupportFragmentManager();
-      return supportFragmentGet(
-          activity, fm, /*parentHint=*/ null, isActivityVisible(activity));
+      return supportFragmentGet(activity, fm, /*parentHint=*/ null, isActivityVisible(activity));
     }
   }
 
@@ -156,8 +155,7 @@ public class RequestManagerRetriever implements Handler.Callback {
     } else {
       assertNotDestroyed(activity);
       android.app.FragmentManager fm = activity.getFragmentManager();
-      return fragmentGet(
-          activity, fm, /*parentHint=*/ null, isActivityVisible(activity));
+      return fragmentGet(activity, fm, /*parentHint=*/ null, isActivityVisible(activity));
     }
   }
 
@@ -384,8 +382,7 @@ public class RequestManagerRetriever implements Handler.Callback {
     if (requestManager == null) {
       // TODO(b/27524013): Factor out this Glide.get() call.
       Glide glide = Glide.get(context);
-      requestManager =
-          factory.build(
+      requestManager = factory.build(
               glide, current.getGlideLifecycle(), current.getRequestManagerTreeNode(), context);
       current.setRequestManager(requestManager);
     }

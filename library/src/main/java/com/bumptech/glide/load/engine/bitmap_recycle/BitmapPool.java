@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.support.annotation.NonNull;
 
 /**
+ * bitmap资源缓存池
  * An interface for a pool that allows users to reuse {@link android.graphics.Bitmap} objects.
  */
 public interface BitmapPool {
