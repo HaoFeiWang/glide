@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
+ *
  * Loads {@link java.nio.ByteBuffer}s using NIO for {@link java.io.File}.
  */
 public class ByteBufferFileLoader implements ModelLoader<File, ByteBuffer> {

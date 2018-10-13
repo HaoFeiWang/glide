@@ -31,10 +31,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * 管理组件注册以扩展或替换Glide的默认加载、解码和编码逻辑
  * Manages component registration to extend or replace Glide's default loading, decoding, and
  * encoding logic.
  */
-// Public API.
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class Registry {
   public static final String BUCKET_GIF = "Gif";

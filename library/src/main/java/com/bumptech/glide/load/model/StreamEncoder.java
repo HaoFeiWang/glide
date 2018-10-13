@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
+ * 将一个 InputStream 输出到一个 File 中
  * An {@link com.bumptech.glide.load.Encoder} that can write an {@link java.io.InputStream} to
  * disk.
  */

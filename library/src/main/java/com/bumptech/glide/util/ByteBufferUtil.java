@@ -61,6 +61,7 @@ public final class ByteBufferUtil {
     }
   }
 
+  //使用NIO将 ByteBuffer 输出到 File 中
   public static void toFile(@NonNull ByteBuffer buffer, @NonNull File file) throws IOException {
     buffer.position(0);
     RandomAccessFile raf = null;

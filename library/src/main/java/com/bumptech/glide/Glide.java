@@ -114,17 +114,22 @@ public class Glide implements ComponentCallbacks2 {
   private static volatile Glide glide;
   private static volatile boolean isInitializing;
 
+  //加载引擎
   private final Engine engine;
+  //Bitmap资源缓存池  LruBitmapPool、BitmapPoolAdapter
   private final BitmapPool bitmapPool;
-
-  //默认为 LruResourceCache
+  //内存缓存 默认为LruResourceCache
   private final MemoryCache memoryCache;
+  //数组资源缓存池 默认为LruArrayPool
+  private final ArrayPool arrayPool;
+  //请求索引
+  private final RequestManagerRetriever requestManagerRetriever;
+  //网络链接状态检测器工厂，用于监听网络状态
+  private final ConnectivityMonitorFactory connectivityMonitorFactory;
+
   private final BitmapPreFiller bitmapPreFiller;
   private final GlideContext glideContext;
   private final Registry registry;
-  private final ArrayPool arrayPool;
-  private final RequestManagerRetriever requestManagerRetriever;
-  private final ConnectivityMonitorFactory connectivityMonitorFactory;
   private final List<RequestManager> managers = new ArrayList<>();
   private MemoryCategory memoryCategory = MemoryCategory.NORMAL;
 
@@ -351,9 +356,9 @@ public class Glide implements ComponentCallbacks2 {
 
     DecodeFormat decodeFormat = defaultRequestOptions.getOptions().get(Downsampler.DECODE_FORMAT);
     bitmapPreFiller = new BitmapPreFiller(memoryCache, bitmapPool, decodeFormat);
-
     final Resources resources = context.getResources();
 
+    //新建注册器
     registry = new Registry();
     // Right now we're only using this parser for HEIF images, which are only supported on OMR1+.
     // If we need this for other file types, we should consider removing this restriction.
@@ -363,10 +368,11 @@ public class Glide implements ComponentCallbacks2 {
       registry.register(new ExifInterfaceImageHeaderParser());
     }
     registry.register(new DefaultImageHeaderParser());
-
     List<ImageHeaderParser> imageHeaderParsers = registry.getImageHeaderParsers();
-    Downsampler downsampler =
-        new Downsampler(
+
+
+    //构建编码器和解码器
+    Downsampler downsampler = new Downsampler(
             imageHeaderParsers,
             resources.getDisplayMetrics(),
             bitmapPool,
@@ -394,10 +400,13 @@ public class Glide implements ComponentCallbacks2 {
 
     ContentResolver contentResolver = context.getContentResolver();
 
+
+    //开始注册各个类型对应的编解码器
     registry
+        //注册两个编码器到 EncoderRegistry
         .append(ByteBuffer.class, new ByteBufferEncoder())
         .append(InputStream.class, new StreamEncoder(arrayPool))
-        /* Bitmaps */
+        //注册两个解码器到 ResourceDecoderRegistry Bitmaps
         .append(Registry.BUCKET_BITMAP, ByteBuffer.class, Bitmap.class, byteBufferBitmapDecoder)
         .append(Registry.BUCKET_BITMAP, InputStream.class, Bitmap.class, streamBitmapDecoder)
         .append(
@@ -530,9 +539,9 @@ public class Glide implements ComponentCallbacks2 {
                 bitmapPool, bitmapBytesTranscoder, gifDrawableBytesTranscoder))
         .register(GifDrawable.class, byte[].class, gifDrawableBytesTranscoder);
 
+    //新建图片显示目标对象工厂，并构建Glide上下文
     ImageViewTargetFactory imageViewTargetFactory = new ImageViewTargetFactory();
-    glideContext =
-        new GlideContext(
+    glideContext = new GlideContext(
             context,
             arrayPool,
             registry,

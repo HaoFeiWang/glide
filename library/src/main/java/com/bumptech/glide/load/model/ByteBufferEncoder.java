@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
+ * 将 ByteBuffer 编码为 File
+ *
  * Writes {@link ByteBuffer ByteBuffers} to {@link File Files}.
  */
 public class ByteBufferEncoder implements Encoder<ByteBuffer> {

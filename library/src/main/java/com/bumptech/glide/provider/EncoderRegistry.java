@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 包含能够编码任意数据类型的有序列表
  * Contains an ordered list of {@link Encoder}s capable of encoding arbitrary data types.
  */
 public class EncoderRegistry {
@@ -43,6 +44,7 @@ public class EncoderRegistry {
     }
 
     boolean handles(@NonNull Class<?> dataClass) {
+      //this.dataClass 是否与 dataClass 相同；或者this.dataClass 是否是 dataClass 的父类
       return this.dataClass.isAssignableFrom(dataClass);
     }
   }
