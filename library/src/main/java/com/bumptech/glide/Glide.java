@@ -381,6 +381,7 @@ public class Glide implements ComponentCallbacks2 {
         new ByteBufferGifDecoder(context, imageHeaderParsers, bitmapPool, arrayPool);
     ResourceDecoder<ParcelFileDescriptor, Bitmap> parcelFileDescriptorVideoDecoder =
         VideoDecoder.parcel(bitmapPool);
+
     ByteBufferBitmapDecoder byteBufferBitmapDecoder = new ByteBufferBitmapDecoder(downsampler);
     StreamBitmapDecoder streamBitmapDecoder = new StreamBitmapDecoder(downsampler, arrayPool);
     ResourceDrawableDecoder resourceDrawableDecoder =
@@ -406,26 +407,19 @@ public class Glide implements ComponentCallbacks2 {
         //注册两个编码器到 EncoderRegistry
         .append(ByteBuffer.class, new ByteBufferEncoder())
         .append(InputStream.class, new StreamEncoder(arrayPool))
-        //注册两个解码器到 ResourceDecoderRegistry Bitmaps
+        //注册解码器到 ResourceDecoderRegistry
         .append(Registry.BUCKET_BITMAP, ByteBuffer.class, Bitmap.class, byteBufferBitmapDecoder)
         .append(Registry.BUCKET_BITMAP, InputStream.class, Bitmap.class, streamBitmapDecoder)
-        .append(
-            Registry.BUCKET_BITMAP,
-            ParcelFileDescriptor.class,
-            Bitmap.class,
-            parcelFileDescriptorVideoDecoder)
-        .append(
-            Registry.BUCKET_BITMAP,
-            AssetFileDescriptor.class,
-            Bitmap.class,
-            VideoDecoder.asset(bitmapPool))
+        .append(Registry.BUCKET_BITMAP, ParcelFileDescriptor.class, Bitmap.class, parcelFileDescriptorVideoDecoder)
+        .append(Registry.BUCKET_BITMAP, AssetFileDescriptor.class, Bitmap.class, VideoDecoder.asset(bitmapPool))
+        //注册数据转换器到 ModelLoaderRegistry
         .append(Bitmap.class, Bitmap.class, UnitModelLoader.Factory.<Bitmap>getInstance())
-        .append(
-            Registry.BUCKET_BITMAP, Bitmap.class, Bitmap.class, new UnitBitmapDecoder())
+        .append(Registry.BUCKET_BITMAP, Bitmap.class, Bitmap.class, new UnitBitmapDecoder())
+        //注册编码器到到 ResourceEncoderRegistry
         .append(Bitmap.class, bitmapEncoder)
-        /* BitmapDrawables */
-        .append(
-            Registry.BUCKET_BITMAP_DRAWABLE,
+
+        //注册解码器到 ResourceDecoderRegistry ，解码为BitmapDrawable类型
+        .append(Registry.BUCKET_BITMAP_DRAWABLE,
             ByteBuffer.class,
             BitmapDrawable.class,
             new BitmapDrawableDecoder<>(resources, byteBufferBitmapDecoder))
@@ -439,19 +433,16 @@ public class Glide implements ComponentCallbacks2 {
             ParcelFileDescriptor.class,
             BitmapDrawable.class,
             new BitmapDrawableDecoder<>(resources, parcelFileDescriptorVideoDecoder))
+
         .append(BitmapDrawable.class, new BitmapDrawableEncoder(bitmapPool, bitmapEncoder))
         /* GIFs */
-        .append(
-            Registry.BUCKET_GIF,
-            InputStream.class,
-            GifDrawable.class,
+        .append(Registry.BUCKET_GIF, InputStream.class, GifDrawable.class,
             new StreamGifDecoder(imageHeaderParsers, byteBufferGifDecoder, arrayPool))
         .append(Registry.BUCKET_GIF, ByteBuffer.class, GifDrawable.class, byteBufferGifDecoder)
         .append(GifDrawable.class, new GifDrawableEncoder())
         /* GIF Frames */
         // Compilation with Gradle requires the type to be specified for UnitModelLoader here.
-        .append(
-            GifDecoder.class, GifDecoder.class, UnitModelLoader.Factory.<GifDecoder>getInstance())
+        .append(GifDecoder.class, GifDecoder.class, UnitModelLoader.Factory.<GifDecoder>getInstance())
         .append(
             Registry.BUCKET_BITMAP,
             GifDecoder.class,
@@ -469,53 +460,37 @@ public class Glide implements ComponentCallbacks2 {
         .append(File.class, ParcelFileDescriptor.class, new FileLoader.FileDescriptorFactory())
         // Compilation with Gradle requires the type to be specified for UnitModelLoader here.
         .append(File.class, File.class, UnitModelLoader.Factory.<File>getInstance())
-        /* Models */
+
+        //注册数据模型转换器到 ModelLoaderRegistry
         .register(new InputStreamRewinder.Factory(arrayPool))
         .append(int.class, InputStream.class, resourceLoaderStreamFactory)
-        .append(
-            int.class,
-            ParcelFileDescriptor.class,
+        .append(int.class, ParcelFileDescriptor.class,
             resourceLoaderFileDescriptorFactory)
         .append(Integer.class, InputStream.class, resourceLoaderStreamFactory)
-        .append(
-            Integer.class,
-            ParcelFileDescriptor.class,
+        .append(Integer.class, ParcelFileDescriptor.class,
             resourceLoaderFileDescriptorFactory)
         .append(Integer.class, Uri.class, resourceLoaderUriFactory)
-        .append(
-            int.class,
-            AssetFileDescriptor.class,
+        .append(int.class, AssetFileDescriptor.class,
             resourceLoaderAssetFileDescriptorFactory)
-        .append(
-            Integer.class,
-            AssetFileDescriptor.class,
+        .append(Integer.class, AssetFileDescriptor.class,
             resourceLoaderAssetFileDescriptorFactory)
         .append(int.class, Uri.class, resourceLoaderUriFactory)
         .append(String.class, InputStream.class, new DataUrlLoader.StreamFactory<String>())
         .append(Uri.class, InputStream.class, new DataUrlLoader.StreamFactory<Uri>())
         .append(String.class, InputStream.class, new StringLoader.StreamFactory())
         .append(String.class, ParcelFileDescriptor.class, new StringLoader.FileDescriptorFactory())
-        .append(
-            String.class, AssetFileDescriptor.class, new StringLoader.AssetFileDescriptorFactory())
+        .append(String.class, AssetFileDescriptor.class, new StringLoader.AssetFileDescriptorFactory())
         .append(Uri.class, InputStream.class, new HttpUriLoader.Factory())
         .append(Uri.class, InputStream.class, new AssetUriLoader.StreamFactory(context.getAssets()))
-        .append(
-            Uri.class,
-            ParcelFileDescriptor.class,
+        .append(Uri.class, ParcelFileDescriptor.class,
             new AssetUriLoader.FileDescriptorFactory(context.getAssets()))
         .append(Uri.class, InputStream.class, new MediaStoreImageThumbLoader.Factory(context))
         .append(Uri.class, InputStream.class, new MediaStoreVideoThumbLoader.Factory(context))
-        .append(
-            Uri.class,
-            InputStream.class,
+        .append(Uri.class, InputStream.class,
             new UriLoader.StreamFactory(contentResolver))
-        .append(
-            Uri.class,
-            ParcelFileDescriptor.class,
+        .append(Uri.class, ParcelFileDescriptor.class,
             new UriLoader.FileDescriptorFactory(contentResolver))
-        .append(
-            Uri.class,
-            AssetFileDescriptor.class,
+        .append(Uri.class, AssetFileDescriptor.class,
             new UriLoader.AssetFileDescriptorFactory(contentResolver))
         .append(Uri.class, InputStream.class, new UrlUriLoader.StreamFactory())
         .append(URL.class, InputStream.class, new UrlLoader.StreamFactory())

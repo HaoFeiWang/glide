@@ -347,6 +347,7 @@ public class RequestManagerRetriever implements Handler.Callback {
         activity.getFragmentManager(), /*parentHint=*/ null, isActivityVisible(activity));
   }
 
+  //查找当前页面是否含有Tag = FRAGMENT_TAG 的Fragment，如果不存在则创建并添加到Activity中
   @SuppressWarnings("deprecation")
   @NonNull
   private RequestManagerFragment getRequestManagerFragment(
@@ -364,6 +365,8 @@ public class RequestManagerRetriever implements Handler.Callback {
         }
         pendingRequestManagerFragments.put(fm, current);
         fm.beginTransaction().add(current, FRAGMENT_TAG).commitAllowingStateLoss();
+
+        //sendToTarget就是由创建该Message的Handler调用sendMessage方法
         handler.obtainMessage(ID_REMOVE_FRAGMENT_MANAGER, fm).sendToTarget();
       }
     }

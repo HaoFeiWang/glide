@@ -45,7 +45,6 @@ import java.util.List;
  * @param <TranscodeType> The type of resource that will be delivered to the
  * {@link com.bumptech.glide.request.target.Target}.
  */
-// Public API.
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBuilder<TranscodeType>>
     implements Cloneable,
@@ -57,6 +56,8 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
 
   private final Context context;
   private final RequestManager requestManager;
+
+  //需要转码的类型
   private final Class<TranscodeType> transcodeClass;
   private final Glide glide;
   private final GlideContext glideContext;
@@ -663,6 +664,7 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
   }
 
   /**
+   *
    * Sets the {@link ImageView} the resource will be loaded into, cancels any existing loads into
    * the view, and frees any resources Glide may have previously loaded into the view so they may be
    * reused.
@@ -707,10 +709,8 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
       }
     }
 
-    return into(
-        glideContext.buildImageViewTarget(view, transcodeClass),
-        /*targetListener=*/ null,
-        requestOptions);
+    return into(glideContext.buildImageViewTarget(view, transcodeClass),
+        /*targetListener=*/ null, requestOptions);
   }
 
   /**

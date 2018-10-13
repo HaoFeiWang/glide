@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 包含能够编码任意数据类型的 ResourceEncoder 的有序列表
  * Contains an ordered list of {@link ResourceEncoder}s capable of encoding arbitrary resource
  * types.
  */

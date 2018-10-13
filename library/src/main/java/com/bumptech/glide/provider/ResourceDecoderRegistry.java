@@ -9,12 +9,21 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * 包含能够将任意类型解码为任意类型的按优先级从高到低的有序列表
+ *
  * Contains an ordered list of {@link ResourceDecoder}s capable of decoding arbitrary data types
  * into arbitrary resource types from highest priority decoders to lowest priority decoders.
  */
 @SuppressWarnings("rawtypes")
 public class ResourceDecoderRegistry {
+
+  /**
+   * 存储解码器的类型
+   * 例如：{@link com.bumptech.glide.Registry#BUCKET_BITMAP}等
+   */
   private final List<String> bucketPriorityList = new ArrayList<>();
+
+  //以解码器类型为KEY，以该类型解码器的List为Value
   private final Map<String, List<Entry<?, ?>>> decoders = new HashMap<>();
 
   public synchronized void setBucketPriorityList(@NonNull List<String> buckets) {

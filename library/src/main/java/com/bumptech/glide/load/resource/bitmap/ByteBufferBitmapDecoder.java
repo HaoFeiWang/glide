@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 /**
+ * 将 ByteBuffers 解码为 Bitmap
  * Decodes {@link android.graphics.Bitmap Bitmaps} from {@link java.nio.ByteBuffer ByteBuffers}.
  */
 public class ByteBufferBitmapDecoder implements ResourceDecoder<ByteBuffer, Bitmap> {

@@ -23,6 +23,7 @@ import java.util.Set;
 public class MultiModelLoaderFactory {
   private static final Factory DEFAULT_FACTORY = new Factory();
   private static final ModelLoader<Object, Object> EMPTY_MODEL_LOADER = new EmptyModelLoader();
+
   private final List<Entry<?, ?>> entries = new ArrayList<>();
   private final Factory factory;
   private final Set<Entry<?, ?>> alreadyUsedEntries = new HashSet<>();
