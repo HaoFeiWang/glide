@@ -119,6 +119,8 @@ public abstract class DiskCacheStrategy {
    * {@link com.bumptech.glide.load.EncodeStrategy} of the
    * {@link com.bumptech.glide.load.ResourceEncoder} (if an
    * {@link com.bumptech.glide.load.ResourceEncoder} is available).
+   *
+   * 自适应类型：如果资源来自于网络则缓存
    */
   public static final DiskCacheStrategy AUTOMATIC = new DiskCacheStrategy() {
     @Override

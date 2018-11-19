@@ -48,17 +48,30 @@ import java.util.Map;
 @SuppressWarnings({"PMD.UseUtilityClass", "unused"})
 public abstract class BaseRequestOptions<T extends BaseRequestOptions<T>> implements Cloneable {
   private static final int UNSET = -1;
+  //设置sizeMultiplier，具体值在sizeMultiplier属性
+  //其表示在加载资源之前给Target大小设置系数
   private static final int SIZE_MULTIPLIER = 1 << 1;
+  //设置diskCacheStrategy，具体值在diskCacheStrategy属性
+  //默认值为DiskCacheStrategy.AUTOMATIC
   private static final int DISK_CACHE_STRATEGY = 1 << 2;
+  //设置priority，具体值保存在priority，默认值为Priority.NORMAL
   private static final int PRIORITY = 1 << 3;
+  //设置error(Drawable)，具体值保存在errorPlaceholder，默认为空
   private static final int ERROR_PLACEHOLDER = 1 << 4;
+  //设置error(Integer)，具体值保存在errorId，默认为0
   private static final int ERROR_ID = 1 << 5;
+  //设置placeholder(Drawable)，具体值保存在placeholderDrawable，默认为null
   private static final int PLACEHOLDER = 1 << 6;
+  //设置placeholder(Integer)，具体值保存在placeholderId，默认为0
   private static final int PLACEHOLDER_ID = 1 << 7;
+  //设置skipMemoryCache，具体值保存在isCacheable，默认为true
   private static final int IS_CACHEABLE = 1 << 8;
+  //设置override，具体值保存在overrideWidth、overrideHeight，默认为-1
   private static final int OVERRIDE = 1 << 9;
+  //设置signature，具体指保存在signature，默认为EmptySignature
   private static final int SIGNATURE = 1 << 10;
   private static final int TRANSFORMATION = 1 << 11;
+  //设置asBitmap、asGif等，对应的具体类型是resourceClass属性
   private static final int RESOURCE_CLASS = 1 << 12;
   private static final int FALLBACK = 1 << 13;
   private static final int FALLBACK_ID = 1 << 14;
@@ -67,6 +80,8 @@ public abstract class BaseRequestOptions<T extends BaseRequestOptions<T>> implem
   private static final int TRANSFORMATION_REQUIRED = 1 << 17;
   private static final int USE_UNLIMITED_SOURCE_GENERATORS_POOL = 1 << 18;
   private static final int ONLY_RETRIEVE_FROM_CACHE = 1 << 19;
+  //设置useAnimationPool，其表示是否使用动画解析线程池
+  //具体值保存useAnimationPool属性，默认为不适用
   private static final int USE_ANIMATION_POOL = 1 << 20;
 
   private int fields;
@@ -163,6 +178,7 @@ public abstract class BaseRequestOptions<T extends BaseRequestOptions<T>> implem
   }
 
   /**
+   * 如果设置为true，则使用专门的线程池去解码动画资源，也就是
    * If set to {@code true}, uses a special {@link java.util.concurrent.Executor} that is used
    * exclusively for decoding frames of animated resources, like GIFs.
    *
@@ -1104,6 +1120,7 @@ public abstract class BaseRequestOptions<T extends BaseRequestOptions<T>> implem
     if (isSet(other.fields, SIZE_MULTIPLIER)) {
       sizeMultiplier = other.sizeMultiplier;
     }
+    //未知
     if (isSet(other.fields, USE_UNLIMITED_SOURCE_GENERATORS_POOL)) {
       useUnlimitedSourceGeneratorsPool = other.useUnlimitedSourceGeneratorsPool;
     }
