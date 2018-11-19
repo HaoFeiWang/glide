@@ -242,19 +242,20 @@ public class Glide implements ComponentCallbacks2 {
 
     //在 build.gradle 的 dependencies 中加入annotationProcessor "com.github.bumptech.glide:compiler:4.3.1"
     //如果使用 @GlideModule 进行注解则会自动生成 GeneratedAppGlideModuleImpl等六个类，所以需要通过反射获取
-    //@GlideModule 只能存在一个，否则编译不过，所以该方法是获取@GlideModule的注解生成类（AAPT的使用）
+    //@GlideModule 只能存在一个，否则编译不过，所以该方法是获取@GlideModule的注解生成类（APT的使用）
     GeneratedAppGlideModule annotationGeneratedModule = getAnnotationGeneratedGlideModules();
-    List<com.bumptech.glide.module.GlideModule> manifestModules = Collections.emptyList();
 
     //默认情况下annotationGeneratedModule.isManifestParsingEnabled()会返回一个 true
     //在AppGlideModule中重写isManifestParsingEnabled方法,返回false可以避免再次解析Manifest
     //当然如果你使用的V3版本，则没必要重写这个方法。为了兼容V3，V4在这里还是做了判断
+    List<com.bumptech.glide.module.GlideModule> manifestModules = Collections.emptyList();
     if (annotationGeneratedModule == null || annotationGeneratedModule.isManifestParsingEnabled()) {
       //解析 Manifest 的 meta-data 中声明的 GlideModule（V3的做法）
       manifestModules = new ManifestParser(applicationContext).parse();
     }
 
     //默认情况下annotationGeneratedModule.getExcludedModuleClasses()会返回一个 EmptySet
+    //去除AppGlideModule（V4）中@Excludes的Module（兼容V3中Manifest中配置的Module），@Excludes是用于剔除某些类
     if (annotationGeneratedModule != null && !annotationGeneratedModule.getExcludedModuleClasses().isEmpty()) {
       Set<Class<?>> excludedModuleClasses = annotationGeneratedModule.getExcludedModuleClasses();
       Iterator<com.bumptech.glide.module.GlideModule> iterator = manifestModules.iterator();
@@ -277,10 +278,12 @@ public class Glide implements ComponentCallbacks2 {
       }
     }
 
+    //获取注解生成的 GeneratedRequestManagerFactory
     RequestManagerRetriever.RequestManagerFactory factory = annotationGeneratedModule != null
         ? annotationGeneratedModule.getRequestManagerFactory() : null;
-
     builder.setRequestManagerFactory(factory);
+
+    //调用AppGlideModule的applyOptions方法，设置缓存等统一配置
     for (com.bumptech.glide.module.GlideModule module : manifestModules) {
       module.applyOptions(applicationContext, builder);
     }
@@ -290,6 +293,8 @@ public class Glide implements ComponentCallbacks2 {
 
     //构建出Glide对象
     Glide glide = builder.build(applicationContext);
+
+    //调用AppGlideModule的registerComponents方法，注册指定组件到Glide中
     for (com.bumptech.glide.module.GlideModule module : manifestModules) {
       module.registerComponents(applicationContext, glide, glide.registry);
     }
@@ -297,6 +302,7 @@ public class Glide implements ComponentCallbacks2 {
       annotationGeneratedModule.registerComponents(applicationContext, glide, glide.registry);
     }
 
+    //在onConfigurationChanged(), onLowMemory(), onTrimMemory()方法中会回调注册的组件
     applicationContext.registerComponentCallbacks(glide);
     Glide.glide = glide;
   }
@@ -523,7 +529,7 @@ public class Glide implements ComponentCallbacks2 {
             imageViewTargetFactory,
             defaultRequestOptions,
             defaultTransitionOptions,
-            defaultRequestListeners,
+            defaultRequestListeners,  //GlideAppModule的applyOptions方法中增加全局的监听
             engine,
             logLevel);
   }
