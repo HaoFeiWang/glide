@@ -431,15 +431,11 @@ public class RequestManagerRetriever implements Handler.Callback {
       @NonNull FragmentManager fm,
       @Nullable Fragment parentHint,
       boolean isParentVisible) {
-    SupportRequestManagerFragment current =
-        getSupportRequestManagerFragment(fm, parentHint, isParentVisible);
+    SupportRequestManagerFragment current = getSupportRequestManagerFragment(fm, parentHint, isParentVisible);
     RequestManager requestManager = current.getRequestManager();
     if (requestManager == null) {
-      // TODO(b/27524013): Factor out this Glide.get() call.
       Glide glide = Glide.get(context);
-      requestManager =
-          factory.build(
-              glide, current.getGlideLifecycle(), current.getRequestManagerTreeNode(), context);
+      requestManager = factory.build(glide, current.getGlideLifecycle(), current.getRequestManagerTreeNode(), context);
       current.setRequestManager(requestManager);
     }
     return requestManager;

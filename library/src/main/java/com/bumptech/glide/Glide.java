@@ -360,6 +360,7 @@ public class Glide implements ComponentCallbacks2 {
     this.requestManagerRetriever = requestManagerRetriever;
     this.connectivityMonitorFactory = connectivityMonitorFactory;
 
+    //全局默认属性 ———— 解码格式
     DecodeFormat decodeFormat = defaultRequestOptions.getOptions().get(Downsampler.DECODE_FORMAT);
     bitmapPreFiller = new BitmapPreFiller(memoryCache, bitmapPool, decodeFormat);
     final Resources resources = context.getResources();
@@ -377,32 +378,41 @@ public class Glide implements ComponentCallbacks2 {
     List<ImageHeaderParser> imageHeaderParsers = registry.getImageHeaderParsers();
 
 
-    //构建编码器和解码器
+    //根据它们的EXIF方向向下采样、解码和旋转图像。
     Downsampler downsampler = new Downsampler(
             imageHeaderParsers,
             resources.getDisplayMetrics(),
             bitmapPool,
             arrayPool);
-    ByteBufferGifDecoder byteBufferGifDecoder =
-        new ByteBufferGifDecoder(context, imageHeaderParsers, bitmapPool, arrayPool);
-    ResourceDecoder<ParcelFileDescriptor, Bitmap> parcelFileDescriptorVideoDecoder =
-        VideoDecoder.parcel(bitmapPool);
 
+    //创建解码器：ByteBuffer -> GifDrawableResource
+    ByteBufferGifDecoder byteBufferGifDecoder = new ByteBufferGifDecoder(context,
+        imageHeaderParsers, bitmapPool, arrayPool);
+    ResourceDecoder<ParcelFileDescriptor, Bitmap> parcelFileDescriptorVideoDecoder
+        = VideoDecoder.parcel(bitmapPool);
+
+    //创建解码器：ByteBuffer ——> Bitmap
     ByteBufferBitmapDecoder byteBufferBitmapDecoder = new ByteBufferBitmapDecoder(downsampler);
+    //创建解码器：InputStream ——> Bitmap
     StreamBitmapDecoder streamBitmapDecoder = new StreamBitmapDecoder(downsampler, arrayPool);
-    ResourceDrawableDecoder resourceDrawableDecoder =
-        new ResourceDrawableDecoder(context);
-    ResourceLoader.StreamFactory resourceLoaderStreamFactory =
-        new ResourceLoader.StreamFactory(resources);
-    ResourceLoader.UriFactory resourceLoaderUriFactory =
-        new ResourceLoader.UriFactory(resources);
-    ResourceLoader.FileDescriptorFactory resourceLoaderFileDescriptorFactory =
-        new ResourceLoader.FileDescriptorFactory(resources);
-    ResourceLoader.AssetFileDescriptorFactory resourceLoaderAssetFileDescriptorFactory =
-        new ResourceLoader.AssetFileDescriptorFactory(resources);
+    //创建解码器：Uri ——> Drawable
+    ResourceDrawableDecoder resourceDrawableDecoder = new ResourceDrawableDecoder(context);
+
+    //创建数据模型转换器：ID资源 ——> Uri ——> InputStream
+    ResourceLoader.StreamFactory resourceLoaderStreamFactory = new ResourceLoader.StreamFactory(resources);
+    //创建数据模型转换器：ID资源 ——> Uri
+    ResourceLoader.UriFactory resourceLoaderUriFactory = new ResourceLoader.UriFactory(resources);
+    //创建数据模型转换器：ID资源 ——> ParcelFileDescriptor
+    ResourceLoader.FileDescriptorFactory resourceLoaderFileDescriptorFactory = new ResourceLoader.FileDescriptorFactory(resources);
+    //创建数据模型转换器：ID资源 ——> AssetFileDescriptor
+    ResourceLoader.AssetFileDescriptorFactory resourceLoaderAssetFileDescriptorFactory = new ResourceLoader.AssetFileDescriptorFactory(resources);
+
+    //创建编码器：Bitmap ——> File
     BitmapEncoder bitmapEncoder = new BitmapEncoder(arrayPool);
 
+    //创建转码器：Bitmap ——> byte[]
     BitmapBytesTranscoder bitmapBytesTranscoder = new BitmapBytesTranscoder();
+    //创建转码器：GifDrawable ——> byte[]
     GifDrawableBytesTranscoder gifDrawableBytesTranscoder = new GifDrawableBytesTranscoder();
 
     ContentResolver contentResolver = context.getContentResolver();
@@ -410,11 +420,14 @@ public class Glide implements ComponentCallbacks2 {
 
     //开始注册各个类型对应的编解码器
     registry
-        //注册两个编码器到 EncoderRegistry
+        //注册编码器：byte[] -> File
         .append(ByteBuffer.class, new ByteBufferEncoder())
+        //注册编码器：InputStream -> File
         .append(InputStream.class, new StreamEncoder(arrayPool))
-        //注册解码器到 ResourceDecoderRegistry
+
+        //注册解码器: ByteBuffer ——> Bitmap
         .append(Registry.BUCKET_BITMAP, ByteBuffer.class, Bitmap.class, byteBufferBitmapDecoder)
+        //注册解码器：InputStream ——> Bitmap
         .append(Registry.BUCKET_BITMAP, InputStream.class, Bitmap.class, streamBitmapDecoder)
         .append(Registry.BUCKET_BITMAP, ParcelFileDescriptor.class, Bitmap.class, parcelFileDescriptorVideoDecoder)
         .append(Registry.BUCKET_BITMAP, AssetFileDescriptor.class, Bitmap.class, VideoDecoder.asset(bitmapPool))
@@ -424,22 +437,25 @@ public class Glide implements ComponentCallbacks2 {
         //注册编码器到到 ResourceEncoderRegistry
         .append(Bitmap.class, bitmapEncoder)
 
-        //注册解码器到 ResourceDecoderRegistry ，解码为BitmapDrawable类型
+        //注册解码器到 ByteBuffer ——> BitmapDrawable
         .append(Registry.BUCKET_BITMAP_DRAWABLE,
             ByteBuffer.class,
             BitmapDrawable.class,
             new BitmapDrawableDecoder<>(resources, byteBufferBitmapDecoder))
+        //注册解码器到 InputStream ——> BitmapDrawable
         .append(
             Registry.BUCKET_BITMAP_DRAWABLE,
             InputStream.class,
             BitmapDrawable.class,
             new BitmapDrawableDecoder<>(resources, streamBitmapDecoder))
+        //注册解码器到 ParcelFileDescriptor ——> BitmapDrawable
         .append(
             Registry.BUCKET_BITMAP_DRAWABLE,
             ParcelFileDescriptor.class,
             BitmapDrawable.class,
             new BitmapDrawableDecoder<>(resources, parcelFileDescriptorVideoDecoder))
 
+        //注册编码器：BitmapDrawable -> File
         .append(BitmapDrawable.class, new BitmapDrawableEncoder(bitmapPool, bitmapEncoder))
         /* GIFs */
         .append(Registry.BUCKET_GIF, InputStream.class, GifDrawable.class,
@@ -449,37 +465,30 @@ public class Glide implements ComponentCallbacks2 {
         /* GIF Frames */
         // Compilation with Gradle requires the type to be specified for UnitModelLoader here.
         .append(GifDecoder.class, GifDecoder.class, UnitModelLoader.Factory.<GifDecoder>getInstance())
-        .append(
-            Registry.BUCKET_BITMAP,
-            GifDecoder.class,
-            Bitmap.class,
-            new GifFrameResourceDecoder(bitmapPool))
+        .append(Registry.BUCKET_BITMAP, GifDecoder.class, Bitmap.class, new GifFrameResourceDecoder(bitmapPool))
         /* Drawables */
         .append(Uri.class, Drawable.class, resourceDrawableDecoder)
-        .append(
-            Uri.class, Bitmap.class, new ResourceBitmapDecoder(resourceDrawableDecoder, bitmapPool))
+        .append(Uri.class, Bitmap.class, new ResourceBitmapDecoder(resourceDrawableDecoder, bitmapPool))
+
+
         /* Files */
         .register(new ByteBufferRewinder.Factory())
         .append(File.class, ByteBuffer.class, new ByteBufferFileLoader.Factory())
         .append(File.class, InputStream.class, new FileLoader.StreamFactory())
         .append(File.class, File.class, new FileDecoder())
         .append(File.class, ParcelFileDescriptor.class, new FileLoader.FileDescriptorFactory())
-        // Compilation with Gradle requires the type to be specified for UnitModelLoader here.
         .append(File.class, File.class, UnitModelLoader.Factory.<File>getInstance())
-
-        //注册数据模型转换器到 ModelLoaderRegistry
         .register(new InputStreamRewinder.Factory(arrayPool))
+
+
+        //注册数据模型转换器：资源Id ——> InputStream
         .append(int.class, InputStream.class, resourceLoaderStreamFactory)
-        .append(int.class, ParcelFileDescriptor.class,
-            resourceLoaderFileDescriptorFactory)
+        .append(int.class, ParcelFileDescriptor.class, resourceLoaderFileDescriptorFactory)
         .append(Integer.class, InputStream.class, resourceLoaderStreamFactory)
-        .append(Integer.class, ParcelFileDescriptor.class,
-            resourceLoaderFileDescriptorFactory)
+        .append(Integer.class, ParcelFileDescriptor.class, resourceLoaderFileDescriptorFactory)
         .append(Integer.class, Uri.class, resourceLoaderUriFactory)
-        .append(int.class, AssetFileDescriptor.class,
-            resourceLoaderAssetFileDescriptorFactory)
-        .append(Integer.class, AssetFileDescriptor.class,
-            resourceLoaderAssetFileDescriptorFactory)
+        .append(int.class, AssetFileDescriptor.class, resourceLoaderAssetFileDescriptorFactory)
+        .append(Integer.class, AssetFileDescriptor.class, resourceLoaderAssetFileDescriptorFactory)
         .append(int.class, Uri.class, resourceLoaderUriFactory)
         .append(String.class, InputStream.class, new DataUrlLoader.StreamFactory<String>())
         .append(Uri.class, InputStream.class, new DataUrlLoader.StreamFactory<Uri>())
@@ -488,16 +497,12 @@ public class Glide implements ComponentCallbacks2 {
         .append(String.class, AssetFileDescriptor.class, new StringLoader.AssetFileDescriptorFactory())
         .append(Uri.class, InputStream.class, new HttpUriLoader.Factory())
         .append(Uri.class, InputStream.class, new AssetUriLoader.StreamFactory(context.getAssets()))
-        .append(Uri.class, ParcelFileDescriptor.class,
-            new AssetUriLoader.FileDescriptorFactory(context.getAssets()))
+        .append(Uri.class, ParcelFileDescriptor.class, new AssetUriLoader.FileDescriptorFactory(context.getAssets()))
         .append(Uri.class, InputStream.class, new MediaStoreImageThumbLoader.Factory(context))
         .append(Uri.class, InputStream.class, new MediaStoreVideoThumbLoader.Factory(context))
-        .append(Uri.class, InputStream.class,
-            new UriLoader.StreamFactory(contentResolver))
-        .append(Uri.class, ParcelFileDescriptor.class,
-            new UriLoader.FileDescriptorFactory(contentResolver))
-        .append(Uri.class, AssetFileDescriptor.class,
-            new UriLoader.AssetFileDescriptorFactory(contentResolver))
+        .append(Uri.class, InputStream.class, new UriLoader.StreamFactory(contentResolver))
+        .append(Uri.class, ParcelFileDescriptor.class, new UriLoader.FileDescriptorFactory(contentResolver))
+        .append(Uri.class, AssetFileDescriptor.class, new UriLoader.AssetFileDescriptorFactory(contentResolver))
         .append(Uri.class, InputStream.class, new UrlUriLoader.StreamFactory())
         .append(URL.class, InputStream.class, new UrlLoader.StreamFactory())
         .append(Uri.class, File.class, new MediaStoreFileLoader.Factory(context))
@@ -507,16 +512,12 @@ public class Glide implements ComponentCallbacks2 {
         .append(Uri.class, Uri.class, UnitModelLoader.Factory.<Uri>getInstance())
         .append(Drawable.class, Drawable.class, UnitModelLoader.Factory.<Drawable>getInstance())
         .append(Drawable.class, Drawable.class, new UnitDrawableDecoder())
-        /* Transcoders */
-        .register(
-            Bitmap.class,
-            BitmapDrawable.class,
-            new BitmapDrawableTranscoder(resources))
+
+
+        //注册转码器
+        .register(Bitmap.class, BitmapDrawable.class, new BitmapDrawableTranscoder(resources))
         .register(Bitmap.class, byte[].class, bitmapBytesTranscoder)
-        .register(
-            Drawable.class,
-            byte[].class,
-            new DrawableBytesTranscoder(
+        .register(Drawable.class, byte[].class, new DrawableBytesTranscoder(
                 bitmapPool, bitmapBytesTranscoder, gifDrawableBytesTranscoder))
         .register(GifDrawable.class, byte[].class, gifDrawableBytesTranscoder);
 
