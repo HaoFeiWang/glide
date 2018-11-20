@@ -3,6 +3,8 @@ package com.bumptech.glide.request;
 /**
  * An interface for coordinating multiple requests with the same {@link
  * com.bumptech.glide.request.target.Target}.
+ *
+ * 用于协调针对相同图片的多个请求的接口（例如：设置了thumbnail 的请求）
  */
 public interface RequestCoordinator {
 

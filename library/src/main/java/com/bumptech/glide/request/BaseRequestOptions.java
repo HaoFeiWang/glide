@@ -49,7 +49,7 @@ import java.util.Map;
 public abstract class BaseRequestOptions<T extends BaseRequestOptions<T>> implements Cloneable {
   private static final int UNSET = -1;
   //设置sizeMultiplier，具体值在sizeMultiplier属性
-  //其表示在加载资源之前给Target大小设置系数
+  //其表示在加载资源之前给Target大小设置系数，和thumbnail效果一致
   private static final int SIZE_MULTIPLIER = 1 << 1;
   //设置diskCacheStrategy，具体值在diskCacheStrategy属性
   //默认值为DiskCacheStrategy.AUTOMATIC
@@ -70,13 +70,18 @@ public abstract class BaseRequestOptions<T extends BaseRequestOptions<T>> implem
   private static final int OVERRIDE = 1 << 9;
   //设置signature，具体指保存在signature，默认为EmptySignature
   private static final int SIGNATURE = 1 << 10;
+  //设置transform，具体值保存在transformations，默认为空Map
   private static final int TRANSFORMATION = 1 << 11;
   //设置asBitmap、asGif等，对应的具体类型是resourceClass属性
   private static final int RESOURCE_CLASS = 1 << 12;
+  //设置fallback，具体值保存在fallbackDrawable，默认为null
   private static final int FALLBACK = 1 << 13;
+  //设置fallback，具体值保存在fallbackId，默认为0
   private static final int FALLBACK_ID = 1 << 14;
   private static final int THEME = 1 << 15;
+  //设置transform，具体值保存在isTransformationAllowed，默认为true
   private static final int TRANSFORMATION_ALLOWED = 1 << 16;
+  //
   private static final int TRANSFORMATION_REQUIRED = 1 << 17;
   private static final int USE_UNLIMITED_SOURCE_GENERATORS_POOL = 1 << 18;
   private static final int ONLY_RETRIEVE_FROM_CACHE = 1 << 19;
@@ -975,9 +980,9 @@ public abstract class BaseRequestOptions<T extends BaseRequestOptions<T>> implem
     if (isAutoCloneEnabled) {
       return clone().transform(transformation, isRequired);
     }
+    //transformation的包装类，用于对Drawable进行变换，也就是先将Drawable转换为Bitmap，再进行transformation
+    DrawableTransformation drawableTransformation = new DrawableTransformation(transformation, isRequired);
 
-    DrawableTransformation drawableTransformation =
-        new DrawableTransformation(transformation, isRequired);
     transform(Bitmap.class, transformation, isRequired);
     transform(Drawable.class, drawableTransformation, isRequired);
     // TODO: remove BitmapDrawable decoder and this transformation.

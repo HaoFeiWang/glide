@@ -13,6 +13,8 @@ import java.util.WeakHashMap;
  * {@link com.bumptech.glide.RequestManager} and forwards on lifecycle events.
  */
 public final class TargetTracker implements LifecycleListener {
+
+  //WeakHashMap 的key为 WeakReference，下次GC直接回收
   private final Set<Target<?>> targets =
       Collections.newSetFromMap(new WeakHashMap<Target<?>, Boolean>());
 

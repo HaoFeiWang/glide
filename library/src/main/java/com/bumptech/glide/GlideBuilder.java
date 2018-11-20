@@ -464,7 +464,7 @@ public final class GlideBuilder {
       memoryCache = new LruResourceCache(memorySizeCalculator.getMemoryCacheSize());
     }
 
-    //本地磁盘缓存器
+    //本地磁盘缓存器，继承DiskLruCacheFactory
     if (diskCacheFactory == null) {
       diskCacheFactory = new InternalCacheDiskCacheFactory(context);
     }

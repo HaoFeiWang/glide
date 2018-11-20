@@ -170,6 +170,7 @@ public class Engine implements EngineJobListener, MemoryCache.ResourceRemovedLis
     EngineKey key = keyFactory.buildKey(model, signature, width, height, transformations,
         resourceClass, transcodeClass, options);
 
+    //读取获取资源，内部使用HashMap保存，Key为EngineKey，Value为ResourceWeakReference
     EngineResource<?> active = loadFromActiveResources(key, isMemoryCacheable);
     if (active != null) {
       cb.onResourceReady(active, DataSource.MEMORY_CACHE);
@@ -179,6 +180,7 @@ public class Engine implements EngineJobListener, MemoryCache.ResourceRemovedLis
       return null;
     }
 
+    //读取内存缓存，LruResourceCache
     EngineResource<?> cached = loadFromCache(key, isMemoryCacheable);
     if (cached != null) {
       cb.onResourceReady(cached, DataSource.MEMORY_CACHE);
@@ -227,6 +229,7 @@ public class Engine implements EngineJobListener, MemoryCache.ResourceRemovedLis
     jobs.put(key, engineJob);
 
     engineJob.addCallback(cb);
+    //执行任务
     engineJob.start(decodeJob);
 
     if (VERBOSE_IS_LOGGABLE) {

@@ -57,7 +57,7 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
   private final Context context;
   private final RequestManager requestManager;
 
-  //需要转码的类型
+  //需要解码的类型（asXXX的类型），由RequestManager传进来
   private final Class<TranscodeType> transcodeClass;
   private final Glide glide;
   private final GlideContext glideContext;
@@ -627,9 +627,10 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
       throw new IllegalArgumentException("You must call #load() before calling #into()");
     }
 
+    //创建出SingleRequest
     Request request = buildRequest(target, targetListener, options);
-
     Request previous = target.getRequest();
+
     if (request.isEquivalentTo(previous)
         && !isSkipMemoryCacheWithCompletePreviousRequest(options, previous)) {
       request.recycle();
@@ -646,8 +647,11 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
       return target;
     }
 
+    //清除target中的request
     requestManager.clear(target);
+    //给target重新设置request
     target.setRequest(request);
+    //执行request
     requestManager.track(target, request);
 
     return target;
@@ -709,6 +713,7 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
       }
     }
 
+    //Target为BitmapImageViewTarget或DrawableImageViewTarget
     return into(glideContext.buildImageViewTarget(view, transcodeClass),
         /*targetListener=*/ null, requestOptions);
   }
@@ -903,6 +908,8 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
 
     // Build the ErrorRequestCoordinator first if necessary so we can update parentCoordinator.
     ErrorRequestCoordinator errorRequestCoordinator = null;
+
+    //设置了error，并且error中是一个RequestBuilder
     if (errorBuilder != null) {
       errorRequestCoordinator = new ErrorRequestCoordinator(parentCoordinator);
       parentCoordinator = errorRequestCoordinator;
@@ -953,6 +960,8 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
       int overrideWidth,
       int overrideHeight,
       BaseRequestOptions<?> requestOptions) {
+
+    //设置了thumbnail，并且其参数为一个RequestBuilder
     if (thumbnailBuilder != null) {
       // Recursive case: contains a potentially recursive thumbnail request builder.
       if (isThumbnailBuilt) {
@@ -1007,7 +1016,7 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
       coordinator.setRequests(fullRequest, thumbRequest);
       return coordinator;
     } else if (thumbSizeMultiplier != null) {
-      // Base case: thumbnail multiplier generates a thumbnail request, but cannot recurse.
+      // 设置了thumbnail，并且其参数是一个float数值，使用缩略图乘法器生成缩略图请求，但不能恢复
       ThumbnailRequestCoordinator coordinator = new ThumbnailRequestCoordinator(parentCoordinator);
       Request fullRequest =
           obtainRequest(
@@ -1019,9 +1028,9 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
               priority,
               overrideWidth,
               overrideHeight);
+
       BaseRequestOptions<?> thumbnailOptions =
           requestOptions.clone().sizeMultiplier(thumbSizeMultiplier);
-
       Request thumbnailRequest =
           obtainRequest(
               target,
@@ -1029,14 +1038,14 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
               thumbnailOptions,
               coordinator,
               transitionOptions,
-              getThumbnailPriority(priority),
+              getThumbnailPriority(priority),  //比fullRequest高一个优先级
               overrideWidth,
               overrideHeight);
 
       coordinator.setRequests(fullRequest, thumbnailRequest);
       return coordinator;
     } else {
-      // Base case: no thumbnail.
+      // 没有设置过thumbnail
       return obtainRequest(
           target,
           targetListener,

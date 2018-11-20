@@ -521,7 +521,7 @@ public class Glide implements ComponentCallbacks2 {
                 bitmapPool, bitmapBytesTranscoder, gifDrawableBytesTranscoder))
         .register(GifDrawable.class, byte[].class, gifDrawableBytesTranscoder);
 
-    //新建图片显示目标对象工厂，并构建Glide上下文
+    //新建ImageViewTarget工厂类，在into(ImageView)时创建ImageViewTarget使用
     ImageViewTargetFactory imageViewTargetFactory = new ImageViewTargetFactory();
     glideContext = new GlideContext(
             context,
